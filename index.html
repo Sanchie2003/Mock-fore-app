@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Forex Deposit</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; padding: 20px; display: flex; justify-content: center; align-items: center; height: 90vh; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #666; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #message { margin-top: 15px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Forex Account Deposit</h2>
+        <form id="depositForm">
+            <div class="form-group">
+                <label for="user_id">User ID:</label>
+                <input type="text" id="user_id" required placeholder="e.g., 1">
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" required placeholder="e.g., user@example.com">
+            </div>
+            <div class="form-group">
+                <label for="amount">Amount (KES/USD):</label>
+                <input type="number" id="amount" required placeholder="e.g., 1000">
+            </div>
+            <button type="submit">Proceed to Paystack</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        document.getElementById('depositForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user_id = document.getElementById('user_id').value;
+            const email = document.getElementById('email').value;
+            const amount = document.getElementById('amount').value;
+            const messageDiv = document.getElementById('message');
+
+            messageDiv.style.color = '#000';
+            messageDiv.innerText = 'Initializing payment...';
+
+            try {
+                const response = await fetch('/api/payments/deposit/initialize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id, email, amount })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.authorization_url) {
+                    messageDiv.style.color = 'green';
+                    messageDiv.innerText = 'Redirecting to Paystack...';
+                    window.location.href = data.authorization_url;
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.innerText = data.error || 'Failed to initialize deposit.';
+                }
+            } catch (err) {
+                messageDiv.style.color = 'red';
+                messageDiv.innerText = 'Network error occurred.';
+            }
+        });
+    </script>
+</body>
+</html>
+

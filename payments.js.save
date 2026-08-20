@@ -1,0 +1,28 @@
+/Fcg const express = require('express');
+const router = express.Router();
+const pool = require('./db');
+const axios = require('axios');
+
+router.post('/deposit/initialize', async (req, res) => {
+  const { user_id, email, amount } = req.body;
+  try {
+    const response = await axios.post('https://api.paystack.co/transaction/initialize', {
+      email: email,
+      amount: amount * 100,
+      callback_url: 'https://yourdomain.com/api/payments/verify'
+    }, {
+      headers: { Authorization: `Bearer sk_test_your_secret_key_here` }
+    });
+    const { authorization_url, reference } = response.data.data;
+    await pool.query(
+      `INSERT INTO ledger (user_id, account_type, amount, transaction_type, reference_id) VALUES ($1, 'USD', $2, 'DEPOSIT', $3)`,
+      [user_id, amount, reference]
+    );
+    res.json({ status: 'success', authorization_url, reference });
+  } catch (err) {
+    res.status(500).json({ error: err.response?.data?.message || err.message });
+  }
+});
+
+module.exports = router;
+
